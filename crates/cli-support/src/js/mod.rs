@@ -21,6 +21,7 @@ mod binding;
 
 pub struct Context<'a> {
     globals: String,
+    export_header: String,
     imports_post: String,
     typescript: String,
     exposed_globals: Option<HashSet<Cow<'static, str>>>,
@@ -98,6 +99,7 @@ impl<'a> Context<'a> {
     ) -> Result<Context<'a>, Error> {
         Ok(Context {
             globals: String::new(),
+            export_header: String::new(),
             imports_post: String::new(),
             typescript: "/* tslint:disable */\n/* eslint-disable */\n".to_string(),
             exposed_globals: Some(Default::default()),
@@ -162,7 +164,8 @@ impl<'a> Context<'a> {
             | OutputMode::Deno => {
                 if let Some(body) = contents.strip_prefix("function") {
                     if export_name == definition_name {
-                        format!("export function {}{}\n", export_name, body)
+                        self.export_header.push_str(&format!("\"{}\", ", export_name));
+                        format!("function {}{}\n", export_name, body)
                     } else {
                         format!(
                             "function {}{}\nexport {{ {} as {} }};\n",
@@ -480,10 +483,10 @@ impl<'a> Context<'a> {
             // expose the same initialization function as `--target no-modules`
             // as the default export of the module.
             OutputMode::Web => {
+                self.export_header = format!("var EXPORTED_SYMBOLS = [{}\"__wbg_init\", \"initSync\"];\n",
+                                             &self.export_header);
                 self.imports_post.push_str("let wasm;\n");
                 init = self.gen_init(needs_manual_start, Some(&mut imports))?;
-                footer.push_str("export { initSync }\n");
-                footer.push_str("export default __wbg_init;");
             }
         }
 
@@ -515,6 +518,7 @@ impl<'a> Context<'a> {
         };
 
         push_with_newline(&imports);
+        push_with_newline(&self.export_header);
         push_with_newline(&self.imports_post);
 
         // Emit all our exports from this module
