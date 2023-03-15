@@ -619,7 +619,10 @@ fn instruction(
             }
 
             // Call the function through an export of the underlying module.
-            let call = invoc.invoke(js.cx, &args, &mut js.prelude, log_error)?;
+            let mut call = invoc.invoke(js.cx, &args, &mut js.prelude, log_error)?;
+            if call.eq("self.self") {
+                call = String::from("window");
+            }
 
             // And then figure out how to actually handle where the call
             // happens. This is pretty conditional depending on the number of

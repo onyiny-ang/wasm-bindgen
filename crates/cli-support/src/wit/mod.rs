@@ -698,6 +698,7 @@ impl<'a> Context<'a> {
             decode::OperationKind::Getter(field) => {
                 if structural {
                     if op.is_static {
+                        println!("determine import op: {}", field.to_string());
                         Ok((
                             AuxImport::StructuralClassGetter(class, field.to_string()),
                             false,
