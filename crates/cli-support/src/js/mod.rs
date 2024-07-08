@@ -174,7 +174,8 @@ impl<'a> Context<'a> {
                     }
                 } else if contents.starts_with("class") {
                     assert_eq!(export_name, definition_name);
-                    format!("export {}\n", contents)
+                    self.export_header.push_str(&format!("\"{}\", ", export_name));
+                   format!("{}\n", contents)
                 } else {
                     assert_eq!(export_name, definition_name);
                     format!("export const {} = {};\n", export_name, contents)
